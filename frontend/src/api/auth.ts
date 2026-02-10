@@ -1,4 +1,4 @@
-import { fetchApi } from './client'
+import { fetchApi, setCsrfToken } from './client'
 
 export interface User {
   id: number
@@ -6,6 +6,7 @@ export interface User {
   display_name: string
   email: string
   role: 'user' | 'admin'
+  csrf_token?: string
 }
 
 export interface LoginRequest {
@@ -14,16 +15,22 @@ export interface LoginRequest {
 }
 
 export async function login(data: LoginRequest): Promise<User> {
-  return fetchApi<User>('/api/auth/login', {
+  const user = await fetchApi<User>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify(data),
   })
+  if (user.csrf_token) setCsrfToken(user.csrf_token)
+  return user
 }
 
 export async function logout(): Promise<void> {
-  return fetchApi<void>('/api/auth/logout', { method: 'POST' })
+  const result = await fetchApi<void>('/api/auth/logout', { method: 'POST' })
+  setCsrfToken(undefined)
+  return result
 }
 
 export async function getMe(): Promise<User> {
-  return fetchApi<User>('/api/auth/me')
+  const user = await fetchApi<User>('/api/auth/me')
+  if (user.csrf_token) setCsrfToken(user.csrf_token)
+  return user
 }

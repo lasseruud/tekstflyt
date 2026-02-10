@@ -1,8 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
-function getCsrfToken(): string | undefined {
-  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
-  return match ? match[1] : undefined
+// CSRF token stored in memory (returned from login/me endpoints)
+let _csrfToken: string | undefined
+
+export function setCsrfToken(token: string | undefined) {
+  _csrfToken = token
+}
+
+export function getCsrfToken(): string | undefined {
+  return _csrfToken
 }
 
 export class ApiError extends Error {
@@ -22,8 +28,7 @@ export async function fetchApi<T>(
   const csrfHeaders: Record<string, string> = {}
   const method = options.method?.toUpperCase()
   if (method && method !== 'GET' && method !== 'HEAD') {
-    const csrf = getCsrfToken()
-    if (csrf) csrfHeaders['X-CSRF-Token'] = csrf
+    if (_csrfToken) csrfHeaders['X-CSRF-Token'] = _csrfToken
   }
 
   const res = await fetch(`${API_BASE}${path}`, {

@@ -1,4 +1,4 @@
-import { fetchApi } from './client'
+import { fetchApi, getCsrfToken } from './client'
 
 export interface KnowledgeDocument {
   id: number
@@ -47,9 +47,9 @@ export async function uploadKnowledge(file: File, category: string, description:
   formData.append('category', category)
   formData.append('description', description)
 
-  const csrfMatch = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
   const headers: Record<string, string> = {}
-  if (csrfMatch) headers['X-CSRF-Token'] = csrfMatch[1]
+  const csrf = getCsrfToken()
+  if (csrf) headers['X-CSRF-Token'] = csrf
 
   const res = await fetch(`${API_BASE}/api/admin/knowledge`, {
     method: 'POST',

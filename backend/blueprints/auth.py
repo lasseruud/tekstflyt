@@ -33,7 +33,9 @@ def login():
     token = create_token(user["id"], user["role"])
 
     csrf_token = generate_csrf_token()
-    resp = make_response(jsonify(_user_response(user)))
+    user_data = _user_response(user)
+    user_data["csrf_token"] = csrf_token
+    resp = make_response(jsonify(user_data))
     resp.set_cookie(
         "token",
         token,
@@ -70,4 +72,10 @@ def me():
     user = user_model.find_by_id(g.user_id)
     if not user:
         return jsonify({"error": "Bruker ikke funnet"}), 404
-    return jsonify(_user_response(user))
+
+    # Return CSRF token from cookie so frontend can use it cross-origin
+    csrf_token = request.cookies.get("csrf_token")
+    user_data = _user_response(user)
+    if csrf_token:
+        user_data["csrf_token"] = csrf_token
+    return jsonify(user_data)

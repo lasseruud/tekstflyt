@@ -1,9 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || ''
+import { getCsrfToken } from './client'
 
-function getCsrfToken(): string | undefined {
-  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
-  return match ? match[1] : undefined
-}
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 export interface UploadResult {
   filename: string
