@@ -279,31 +279,39 @@ backend/
 
 ## Implementeringsfaser
 
-### Fase 1: Fundament
+### Fase 1: Fundament ✅
 **Mål**: Grunnleggende prosjektoppsett som bygger og kjører.
 
-- Oppsett av Vite/React/TS-prosjekt med TanStack Query og React Router
-- Oppsett av Flask-backend med blueprint-struktur
-- PostgreSQL-database med skjema (uten pgvector ennå)
-- CORS-konfigurasjon mellom frontend/backend
-- Grunnleggende mappestruktur på plass
-- Verifiser at frontend og backend kommuniserer
+- ✅ Oppsett av Vite/React/TS-prosjekt med TanStack Query og React Router
+- ✅ Oppsett av Flask-backend med blueprint-struktur
+- ⏳ PostgreSQL-database med skjema (uten pgvector ennå) → flyttes til Fase 2
+- ✅ CORS-konfigurasjon mellom frontend/backend (cross-origin med SameSite=None + Secure)
+- ✅ Grunnleggende mappestruktur på plass
+- ✅ Verifiser at frontend og backend kommuniserer
+- ✅ Deploy-oppsett: nginx, systemd (gunicorn), SSL via Certbot
+- ✅ Sikkerhetsheadere i nginx (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, HSTS)
+- ✅ Rate limiting på login (5/min per IP via nginx limit_req)
 
-**Leveranse**: Tom app som viser "Hello TekstFlyt" med fungerende API-kall.
+**Leveranse**: Fungerende app med login, dashboard, sidebar, dark mode. Live på https://kvtas.tekstflyt.com
 
 ---
 
-### Fase 2: Autentisering
+### Fase 2: Autentisering (delvis ferdig)
 **Mål**: Innlogging fungerer ende-til-ende.
 
-- Backend: Bruker-modell, passord-hashing (bcrypt), JWT i httpOnly cookies (SameSite=Strict)
-- Backend: Login/logout/me-endepunkter
-- Backend: Rolle-guard decorator for admin-endepunkter
-- Frontend: LoginPage med skjema
-- Frontend: AuthContext/useAuth hook
-- Frontend: ProtectedRoute-komponent
-- Opprett 1-2 testbrukere via seed-script
-- Hele appen bak innlogging
+- ⏳ Backend: Bruker-modell, passord-hashing (bcrypt), JWT i httpOnly cookies (SameSite=Strict)
+- ✅ Backend: Login/logout/me-endepunkter (midlertidig hardkodede brukere)
+- ✅ Backend: Rolle-guard decorator for admin-endepunkter (require_auth, require_admin)
+- ✅ Backend: CSRF-beskyttelse (double submit cookie)
+- ✅ Backend: JWT_SECRET-validering ved oppstart
+- ✅ Frontend: LoginPage med skjema, TekstFlyt/KVTAS-logoer, dark mode toggle
+- ✅ Frontend: AuthContext/useAuth hook (TanStack Query)
+- ✅ Frontend: ProtectedRoute-komponent
+- ✅ Frontend: Sidebar med nav, dark mode toggle, brukerinfo, logout
+- ⏳ Opprett 1-2 testbrukere via seed-script (avhenger av PostgreSQL)
+- ✅ Hele appen bak innlogging
+
+**Gjenstår i Fase 2**: PostgreSQL-oppsett, users-tabell, bcrypt-hashing, seed-script, Alembic-migrasjoner.
 
 **Leveranse**: Kun innloggede brukere ser appen. Redirect til login ved uautentisert tilgang.
 

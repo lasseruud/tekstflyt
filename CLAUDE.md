@@ -48,11 +48,46 @@ Innlogging → Dashboard → Velg type → Fyll inn felt → Prompt + vedlegg �
 - Kunderegister med autocomplete i wizard (importert fra Drifti CRM via CSV)
 
 ## Sikkerhet
-- Auth: JWT i httpOnly cookies (SameSite=Strict), aldri i localStorage
+- Auth: JWT i httpOnly cookies (SameSite=None + Secure i prod), aldri i localStorage
+- CSRF: Double submit cookie (csrf_token cookie + X-CSRF-Token header)
 - Admin-endepunkter beskyttet med rolle-guard decorator
 - Filopplasting: secure_filename, 20MB maks, hviteliste filtyper, lagring utenfor webroot
 - SQL: Parameteriserte queries, ingen string-formatering
-- CORS: Eksplisitt origin (frontend.lasseruud.com)
+- CORS: Eksplisitt origin (https://kvtas.tekstflyt.com)
+- Nginx: Sikkerhetsheadere (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, HSTS)
+- Rate limiting: 5 login-forsøk/min per IP (nginx limit_req)
+- JWT_SECRET: Valideres ved oppstart, feiler om default
+
+## Deploy
+
+### Frontend (kvtas.tekstflyt.com)
+- Server: `lasse@frontend.lasseruud.com`
+- Path: `/var/www/kvtas.tekstflyt.com` (statiske filer, IKKE git repo)
+- Nginx config: `/etc/nginx/sites-available/kvtas.tekstflyt.com`
+- Deploy-kommando (fra lokal maskin):
+  ```
+  cd frontend && npm run build
+  scp -r dist/. lasse@frontend.lasseruud.com:/var/www/kvtas.tekstflyt.com/
+  ```
+- VITE_API_URL settes i `frontend/.env.production` (ikke i git)
+
+### Backend (kvtas-api.tekstflyt.com)
+- Server: `lasse@backend.lasseruud.com`
+- Path: `/opt/kvtas.tekstflyt.com` (git repo)
+- Nginx config: `/etc/nginx/sites-available/kvtas.tekstflyt.com` (NB: heter IKKE kvtas-api)
+- Service: `systemd tekstflyt.service` (gunicorn, 2 workers, port 5001)
+- .env: `/opt/kvtas.tekstflyt.com/backend/.env`
+- Deploy-kommando:
+  ```
+  ssh lasse@backend.lasseruud.com "cd /opt/kvtas.tekstflyt.com && git pull && cd backend && .venv/bin/pip install -r requirements.txt -q"
+  ```
+- Restart krever sudo: `ssh lasse@backend.lasseruud.com "sudo systemctl restart tekstflyt"`
+
+### Viktig
+- Frontend og backend er på FORSKJELLIGE servere med forskjellige IP-er
+- Nginx-endringer krever sudo: `sudo nginx -t && sudo systemctl reload nginx`
+- SSL via Certbot (allerede konfigurert)
+- `rsync` er IKKE installert - bruk `scp -r` for filkopiering
 
 ## Kodekonvensjoner
 - Frontend: React funksjonelle komponenter, TypeScript strict
