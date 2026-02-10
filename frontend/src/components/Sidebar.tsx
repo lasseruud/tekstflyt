@@ -18,17 +18,20 @@ export default function Sidebar() {
   return (
     <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
+      <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
         <img
-          src="/logo-kvtas-light.png"
-          alt="KVTAS"
-          className="h-8 dark:hidden"
+          src="/logo-tekstflyt-light.png"
+          alt="TekstFlyt"
+          className="h-9 dark:hidden"
         />
         <img
-          src="/logo-kvtas-dark.png"
-          alt="KVTAS"
-          className="h-8 hidden dark:block"
+          src="/logo-tekstflyt-dark.png"
+          alt="TekstFlyt"
+          className="h-9 hidden dark:block"
         />
+        <p className="mt-1.5 text-xs text-gray-700 dark:text-gray-300 tracking-wide">
+          Kulde- &amp; Varmepumpeteknikk AS
+        </p>
       </div>
 
       {/* Navigation */}

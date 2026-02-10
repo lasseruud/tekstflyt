@@ -1,5 +1,6 @@
 flask==3.1.*
 flask-cors==5.*
+gunicorn==23.*
 psycopg2-binary==2.9.*
 bcrypt==4.*
 PyJWT==2.*

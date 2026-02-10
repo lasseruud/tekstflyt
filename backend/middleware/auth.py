@@ -1,6 +1,7 @@
 from functools import wraps
 from datetime import datetime, timezone, timedelta
 from typing import Any
+import secrets
 
 import jwt
 from flask import request, jsonify, g
@@ -22,6 +23,10 @@ def decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, Config.JWT_SECRET, algorithms=["HS256"])
 
 
+def generate_csrf_token() -> str:
+    return secrets.token_hex(32)
+
+
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -38,6 +43,20 @@ def require_auth(f):
 
         g.user_id = payload["user_id"]
         g.user_role = payload["role"]
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+def require_csrf(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        cookie_token = request.cookies.get("csrf_token")
+        header_token = request.headers.get("X-CSRF-Token")
+
+        if not cookie_token or not header_token or cookie_token != header_token:
+            return jsonify({"error": "Ugyldig CSRF-token"}), 403
+
         return f(*args, **kwargs)
 
     return decorated

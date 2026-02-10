@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, make_response
-from middleware.auth import create_token, require_auth
+from middleware.auth import create_token, generate_csrf_token, require_auth, require_csrf
 from config import Config
 
 auth_bp = Blueprint("auth", __name__)
@@ -41,6 +41,7 @@ def login():
     token = create_token(user["id"], user["role"])
     user_data = {k: v for k, v in user.items() if k != "password"}
 
+    csrf_token = generate_csrf_token()
     resp = make_response(jsonify(user_data))
     resp.set_cookie(
         "token",
@@ -51,13 +52,24 @@ def login():
         max_age=Config.JWT_EXPIRY_HOURS * 3600,
         path="/",
     )
+    resp.set_cookie(
+        "csrf_token",
+        csrf_token,
+        httponly=False,
+        samesite="None" if Config.SECURE_COOKIES else "Strict",
+        secure=Config.SECURE_COOKIES,
+        max_age=Config.JWT_EXPIRY_HOURS * 3600,
+        path="/",
+    )
     return resp
 
 
 @auth_bp.route("/logout", methods=["POST"])
+@require_csrf
 def logout():
     resp = make_response(jsonify({"message": "Logget ut"}))
     resp.delete_cookie("token", path="/")
+    resp.delete_cookie("csrf_token", path="/")
     return resp
 
 

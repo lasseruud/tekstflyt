@@ -8,6 +8,7 @@ from blueprints.health import health_bp
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
+    Config.validate()
 
     CORS(app, origins=[Config.CORS_ORIGIN], supports_credentials=True)
 

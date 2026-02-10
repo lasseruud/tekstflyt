@@ -13,3 +13,8 @@ class Config:
     UPLOAD_DIR: str = os.environ.get("UPLOAD_DIR", os.path.join(os.path.dirname(__file__), "uploads"))
     MAX_UPLOAD_SIZE: int = 20 * 1024 * 1024  # 20 MB
     ALLOWED_EXTENSIONS: set[str] = {"pdf", "docx", "doc", "xlsx", "xls", "jpg", "jpeg", "png"}
+
+    @classmethod
+    def validate(cls) -> None:
+        if cls.JWT_SECRET == "change-this-in-production":
+            raise RuntimeError("JWT_SECRET must be set in production")
