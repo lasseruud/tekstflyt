@@ -32,9 +32,13 @@ def find_by_id(doc_id: int) -> dict | None:
         return cur.fetchone()
 
 
-def list_by_user(user_id: int, search: str | None = None, doc_type: str | None = None) -> list[dict]:
-    query = "SELECT * FROM documents WHERE user_id = %s AND status != 'draft'"
-    params: list = [user_id]
+def list_by_user(user_id: int, search: str | None = None, doc_type: str | None = None, admin: bool = False) -> list[dict]:
+    if admin:
+        query = "SELECT * FROM documents WHERE status != 'draft'"
+        params: list = []
+    else:
+        query = "SELECT * FROM documents WHERE user_id = %s AND status != 'draft'"
+        params: list = [user_id]
 
     if search:
         query += " AND (document_name ILIKE %s OR recipient_name ILIKE %s)"

@@ -12,7 +12,8 @@ documents_bp = Blueprint("documents", __name__)
 def list_documents():
     search = request.args.get("search")
     doc_type = request.args.get("type")
-    docs = doc_model.list_by_user(g.user_id, search=search, doc_type=doc_type)
+    is_admin = g.user_role == "admin"
+    docs = doc_model.list_by_user(g.user_id, search=search, doc_type=doc_type, admin=is_admin)
     return jsonify(docs)
 
 
@@ -20,7 +21,7 @@ def list_documents():
 @require_auth
 def get_document(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
     return jsonify(doc)
 
@@ -70,7 +71,7 @@ def create_document():
 @require_csrf
 def update_document(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
     if doc["status"] == "finalized":
         return jsonify({"error": "Kan ikke redigere fullført dokument"}), 400
@@ -96,7 +97,7 @@ def update_document(doc_id: int):
 @require_csrf
 def delete_document(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
 
     # Clean up generated files
@@ -114,7 +115,7 @@ def delete_document(doc_id: int):
 @require_csrf
 def generate_text(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
     if doc["status"] == "finalized":
         return jsonify({"error": "Kan ikke regenerere fullført dokument"}), 400
@@ -145,7 +146,7 @@ def generate_text(doc_id: int):
 @require_csrf
 def finalize_document(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
     if doc["status"] == "finalized":
         return jsonify({"error": "Dokument allerede fullført"}), 400
@@ -165,7 +166,7 @@ def download_file(doc_id: int, file_type: str):
     from flask import send_file
 
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
 
     type_map = {
@@ -190,7 +191,7 @@ def download_file(doc_id: int, file_type: str):
 @require_csrf
 def clone_document(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
 
     cloned = doc_model.clone(doc_id, g.user_id)
@@ -205,7 +206,7 @@ def clone_document(doc_id: int):
 @require_csrf
 def email_document(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
-    if not doc or doc["user_id"] != g.user_id:
+    if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
     if doc["status"] != "finalized":
         return jsonify({"error": "Dokumentet må fullføres før det kan sendes"}), 400
