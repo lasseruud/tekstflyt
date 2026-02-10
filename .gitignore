@@ -1,0 +1,42 @@
+# Archive (v1 reference)
+archive/
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+*.egg-info/
+*.egg
+
+# Temp files
+temp_files/
+*.tmp
+
+# Logs
+*.log
+
+# Claude Code
+.claude/
