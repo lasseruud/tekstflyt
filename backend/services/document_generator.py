@@ -124,8 +124,8 @@ def _insert_document_text(document, text, insert_index):
             level = int(ptype[-1])
             document.add_heading(content, level=level)
         elif ptype == "bullet":
-            p = document.add_paragraph(style="List Bullet")
-            _add_inline_runs(p, content)
+            p = document.add_paragraph()
+            _add_inline_runs(p, f"  \u2022  {content}")
         else:
             p = document.add_paragraph()
             _add_inline_runs(p, content)
