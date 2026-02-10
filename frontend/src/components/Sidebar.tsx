@@ -74,15 +74,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer: user info + dark mode toggle */}
-      <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
-        <button
-          onClick={toggleDark}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-        >
-          {dark ? <SunIcon /> : <MoonIcon />}
-          {dark ? 'Light mode' : 'Dark mode'}
-        </button>
-
+      <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between px-3">
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
             {user?.display_name}
@@ -94,6 +86,15 @@ export default function Sidebar() {
             Logg ut
           </button>
         </div>
+
+        <hr className="my-3 border-gray-200 dark:border-gray-800" />
+
+        <button
+          onClick={toggleDark}
+          className="flex items-center justify-center w-8 h-8 mx-auto rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+        >
+          {dark ? <SunIcon /> : <MoonIcon />}
+        </button>
       </div>
     </aside>
   )
