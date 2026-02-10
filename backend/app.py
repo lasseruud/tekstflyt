@@ -1,4 +1,7 @@
+from decimal import Decimal
+
 from flask import Flask
+from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
 from config import Config
 from blueprints.auth import auth_bp
@@ -10,8 +13,18 @@ from blueprints.admin import admin_bp
 from db import init_db, close_db
 
 
+class CustomJSONProvider(DefaultJSONProvider):
+    @staticmethod
+    def default(o):
+        if isinstance(o, Decimal):
+            return float(o)
+        return DefaultJSONProvider.default(o)
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.json_provider_class = CustomJSONProvider
+    app.json = CustomJSONProvider(app)
     app.config.from_object(Config)
     Config.validate()
 

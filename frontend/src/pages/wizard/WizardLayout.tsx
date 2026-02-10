@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useDocument } from '../../hooks/useDocuments'
 import type { Document } from '../../api/documents'
@@ -17,10 +17,12 @@ export default function WizardLayout() {
   const { data: existingDoc } = useDocument(docId)
   const [step, setStep] = useState(0)
   const [doc, setDoc] = useState<Document | null>(null)
+  const initializedRef = useRef(false)
 
-  // If editing existing doc, determine starting step
+  // Set step from existing doc only on initial load (not on every refetch)
   useEffect(() => {
-    if (existingDoc) {
+    if (existingDoc && !initializedRef.current) {
+      initializedRef.current = true
       setDoc(existingDoc)
       if (existingDoc.status === 'finalized') {
         setStep(4)
