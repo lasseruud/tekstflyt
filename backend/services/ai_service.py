@@ -100,6 +100,51 @@ def _get_rag_context(query: str) -> str | None:
     return None
 
 
+def generate_document_name(doc: dict, generated_text: str) -> str:
+    """Generate a document name based on type, customer and content."""
+    from datetime import date
+
+    date_str = date.today().strftime("%d.%m.%Y")
+    doc_type = doc["document_type"]
+    customer = doc.get("recipient_name") or ""
+
+    # Ask the AI for a short subject (product/topic)
+    type_instructions = {
+        "tilbud": "Hva er produktet/tjenesten det gis tilbud på? Svar med maks 5 ord.",
+        "brev": "Hva handler brevet om? Svar med maks 5 ord.",
+        "notat": "Hva handler notatet om? Svar med maks 5 ord.",
+        "omprofilering": "Hva er produktet/tjenesten det gis tilbud på? Svar med maks 5 ord.",
+        "svar_paa_brev": "Hva handler brevet om? Svar med maks 5 ord.",
+    }
+
+    subject = ""
+    try:
+        import anthropic
+        client = anthropic.Anthropic()
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=50,
+            messages=[{
+                "role": "user",
+                "content": f"{type_instructions[doc_type]}\n\nTekst:\n{generated_text[:1000]}",
+            }],
+        )
+        subject = resp.content[0].text.strip().rstrip(".")
+    except Exception:
+        logger.warning("Could not generate document subject, using fallback")
+        subject = "diverse"
+
+    templates = {
+        "tilbud": f"{date_str} - Tilbud på {subject} til {customer}" if customer else f"{date_str} - Tilbud på {subject}",
+        "brev": f"{date_str} - Brev til {customer} vedr. {subject}" if customer else f"{date_str} - Brev vedr. {subject}",
+        "notat": f"{date_str} - Notat vedr. {subject}",
+        "omprofilering": f"{date_str} - Tilbud på {subject} til {customer}" if customer else f"{date_str} - Tilbud på {subject}",
+        "svar_paa_brev": f"{date_str} - Svar til {customer} vedr. {subject}" if customer else f"{date_str} - Svar vedr. {subject}",
+    }
+
+    return templates.get(doc_type, f"{date_str} - {subject}")
+
+
 def generate_document_text(doc: dict, user_prompt: str) -> dict:
     """Generate document text using Claude (primary) or GPT (fallback)."""
     system_prompt = _build_system_prompt(doc)

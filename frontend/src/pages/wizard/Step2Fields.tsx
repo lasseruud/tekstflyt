@@ -16,7 +16,6 @@ interface Props {
 export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
   const updateMutation = useUpdateDocument()
   const [fields, setFields] = useState({
-    document_name: doc.document_name || '',
     recipient_name: doc.recipient_name || '',
     recipient_address: doc.recipient_address || '',
     recipient_postal_code: doc.recipient_postal_code || '',
@@ -32,7 +31,6 @@ export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
 
   useEffect(() => {
     setFields({
-      document_name: doc.document_name || '',
       recipient_name: doc.recipient_name || '',
       recipient_address: doc.recipient_address || '',
       recipient_postal_code: doc.recipient_postal_code || '',
@@ -86,20 +84,6 @@ export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
       </p>
 
       <div className="space-y-4">
-        {/* Document name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Dokumentnavn
-          </label>
-          <input
-            type="text"
-            value={fields.document_name}
-            onChange={(e) => set('document_name', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-kvtas-500 focus:border-transparent"
-            placeholder={`Nytt ${DOC_TYPE_LABELS[doc.document_type]}`}
-          />
-        </div>
-
         {/* Customer search for types that need recipient */}
         {needsRecipient && (
           <>

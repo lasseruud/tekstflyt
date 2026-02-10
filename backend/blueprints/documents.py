@@ -122,10 +122,17 @@ def generate_text(doc_id: int):
     data = request.get_json() or {}
     prompt = data.get("prompt", doc.get("ai_prompt", ""))
 
-    from services.ai_service import generate_document_text
+    from services.ai_service import generate_document_text, generate_document_name
     result = generate_document_text(doc, prompt)
 
-    updates = {"document_text": result["text"], "ai_model": result["model"]}
+    # Auto-generate document name from content
+    doc_name = generate_document_name(doc, result["text"])
+
+    updates = {
+        "document_text": result["text"],
+        "ai_model": result["model"],
+        "document_name": doc_name,
+    }
     if prompt:
         updates["ai_prompt"] = prompt
 
