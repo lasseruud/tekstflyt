@@ -56,7 +56,7 @@ def generate_files(doc: dict) -> dict:
     }
 
 
-def _replace_paragraph_placeholder(paragraph, key, value):
+def _replace_paragraph_placeholder(paragraph, key, value, bold=None):
     """Replace placeholder in paragraph, handling split runs."""
     full_text = paragraph.text
     if key not in full_text:
@@ -67,6 +67,8 @@ def _replace_paragraph_placeholder(paragraph, key, value):
     for i, run in enumerate(paragraph.runs):
         if i == 0:
             run.text = new_text
+            if bold is not None:
+                run.bold = bold
         else:
             run.text = ""
     return True
@@ -154,10 +156,18 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
     # Build replacements matching template placeholders
     replacements = _build_replacements(doc)
 
+    # Placeholders that should NOT be bold (address fields etc.)
+    not_bold = {
+        "{{recipientPerson}}", "{{recipientAddress}}",
+        "{{recipientPostalCode}}", "{{recipientCity}}",
+        "{{recipientPhone}}", "{{recipientEmail}}",
+    }
+
     # Replace simple placeholders (handles split runs)
     for paragraph in document.paragraphs:
         for key, value in replacements.items():
-            _replace_paragraph_placeholder(paragraph, key, value)
+            bold_override = False if key in not_bold else None
+            _replace_paragraph_placeholder(paragraph, key, value, bold=bold_override)
 
     # Also replace in tables (some templates use tables for layout)
     for table in document.tables:
@@ -165,7 +175,8 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
                     for key, value in replacements.items():
-                        _replace_paragraph_placeholder(paragraph, key, value)
+                        bold_override = False if key in not_bold else None
+                        _replace_paragraph_placeholder(paragraph, key, value, bold=bold_override)
 
     # Find and replace {{documentText}} with formatted content
     text = doc.get("document_text", "")
@@ -185,13 +196,12 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
 
     # If no placeholder was found, text was already appended at the end
 
-    # Add signature if signed version
-    if signed:
-        document.add_paragraph()
-        document.add_paragraph("Med vennlig hilsen,")
-        document.add_paragraph("Trond Ilbråten")
-        document.add_paragraph("Kulde- & Varmepumpeteknikk AS")
+    # Add closing signature block
+    document.add_paragraph()
+    document.add_paragraph("Med vennlig hilsen")
 
+    # Add signature image for signed versions
+    if signed:
         sig_path = os.path.join(TEMPLATE_DIR, "signature.png")
         if os.path.exists(sig_path):
             try:
@@ -199,6 +209,13 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
                 document.add_picture(sig_path, width=Cm(5))
             except Exception:
                 logger.warning("Could not insert signature image")
+        document.add_paragraph()
+
+    p_name = document.add_paragraph()
+    run = p_name.add_run("Trond Ilbråten")
+    run.bold = True
+    document.add_paragraph("Daglig leder")
+    document.add_paragraph("Kulde- & Varmepumpeteknikk AS")
 
     suffix = "_signert" if signed else ""
     output_path = os.path.join(OUTPUT_DIR, f"{file_base}{suffix}.docx")
