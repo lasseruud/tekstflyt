@@ -31,7 +31,8 @@ frontend.lasseruud.com          backend.lasseruud.com
 1. **Tilbud** - Salgstilbud med produktinfo fra pgvector, pris/MVA-logikk
 2. **Brev** - Formelle brev med mottaker-info
 3. **Notat** - Interne notater, minimal metadata
-4. **Omprofilering** - Svalinn-dokumenter reprofilert til KVTAS (1:1, ikke oppsummering)
+4. **Omprofilering** - Dokumenter fra leverandører (primært Svalinn) reprofilert til KVTAS (1:1, generisk - ikke låst til én avsender)
+5. **Svar på brev** - Bruker laster opp mottatt brev, gir instruksjoner, AI skriver svarbrev med KVTAS-profil
 
 ## Wizard-flyt
 ```
@@ -39,12 +40,19 @@ Innlogging → Dashboard → Velg type → Fyll inn felt → Prompt + vedlegg �
 ```
 
 ## Viktige forretningsregler
-- Svalinn AS → Kulde- & Varmepumpeteknikk AS (ved omprofilering)
-- Hilde Nordli → Trond Ilbråten (ved omprofilering)
+- Omprofilering erstatter avsenderprofil dynamisk (vanligste: Svalinn AS → KVTAS, Hilde Nordli → Trond Ilbråten)
 - Privat = inkl. mva, Bedrift = eks. mva
 - Ferdige dokumenter er LÅST - kan ikke redigeres, men kan brukes som utgangspunkt for nye
 - Word-dokumenter genereres i 4 varianter: Word, signert Word, PDF, signert PDF
 - Produktkataloger (Daikin) lagres i pgvector for RAG-søk
+- Kunderegister med autocomplete i wizard (importert fra Drifti CRM via CSV)
+
+## Sikkerhet
+- Auth: JWT i httpOnly cookies (SameSite=Strict), aldri i localStorage
+- Admin-endepunkter beskyttet med rolle-guard decorator
+- Filopplasting: secure_filename, 20MB maks, hviteliste filtyper, lagring utenfor webroot
+- SQL: Parameteriserte queries, ingen string-formatering
+- CORS: Eksplisitt origin (frontend.lasseruud.com)
 
 ## Kodekonvensjoner
 - Frontend: React funksjonelle komponenter, TypeScript strict

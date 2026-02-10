@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* KVTAS brand colors */
+  --color-kvtas-50: #e6f7ff;
+  --color-kvtas-100: #b3e6ff;
+  --color-kvtas-200: #80d4ff;
+  --color-kvtas-300: #4dc3ff;
+  --color-kvtas-400: #1ab1ff;
+  --color-kvtas-500: #00aeef;
+  --color-kvtas-600: #008bbf;
+  --color-kvtas-700: #00688f;
+  --color-kvtas-800: #004560;
+  --color-kvtas-900: #002330;
+
+  /* Semantic aliases */
+  --color-primary: var(--color-kvtas-500);
+  --color-primary-hover: var(--color-kvtas-600);
+  --color-primary-light: var(--color-kvtas-50);
+}
