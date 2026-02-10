@@ -89,6 +89,7 @@ export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
           <>
             <CustomerSearch
               onSelect={handleCustomerSelect}
+              onNameChange={(name) => set('recipient_name', name)}
               selectedName={fields.recipient_name}
             />
 

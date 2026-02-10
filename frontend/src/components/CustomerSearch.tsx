@@ -4,10 +4,11 @@ import type { Customer } from '../api/customers'
 
 interface Props {
   onSelect: (customer: Customer) => void
+  onNameChange?: (name: string) => void
   selectedName?: string
 }
 
-export default function CustomerSearch({ onSelect, selectedName }: Props) {
+export default function CustomerSearch({ onSelect, onNameChange, selectedName }: Props) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -39,6 +40,7 @@ export default function CustomerSearch({ onSelect, selectedName }: Props) {
         value={query || selectedName || ''}
         onChange={(e) => {
           setQuery(e.target.value)
+          onNameChange?.(e.target.value)
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
