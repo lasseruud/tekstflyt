@@ -1,28 +1,19 @@
-from flask import Blueprint, request, jsonify, make_response
+from flask import Blueprint, request, jsonify, make_response, g
 from middleware.auth import create_token, generate_csrf_token, require_auth, require_csrf
 from config import Config
+from models import user as user_model
 
 auth_bp = Blueprint("auth", __name__)
 
-# Temporary hardcoded users for development (replaced by DB in Fase 2)
-_DEV_USERS = {
-    "lasse": {
-        "id": 1,
-        "username": "lasse",
-        "password": "demo123",
-        "display_name": "Lasse Ruud",
-        "email": "lasse@kvtas.no",
-        "role": "admin",
-    },
-    "trond": {
-        "id": 2,
-        "username": "trond",
-        "password": "demo123",
-        "display_name": "Trond Ilbråten",
-        "email": "trond@kvtas.no",
-        "role": "user",
-    },
-}
+
+def _user_response(user: dict) -> dict:
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "display_name": user["display_name"],
+        "email": user["email"],
+        "role": user["role"],
+    }
 
 
 @auth_bp.route("/login", methods=["POST"])
@@ -34,15 +25,15 @@ def login():
     username = data.get("username", "").strip().lower()
     password = data.get("password", "")
 
-    user = _DEV_USERS.get(username)
-    if not user or user["password"] != password:
+    user = user_model.find_by_username(username)
+    if not user or not user_model.verify_password(password, user["password_hash"]):
         return jsonify({"error": "Feil brukernavn eller passord"}), 401
 
+    user_model.update_last_login(user["id"])
     token = create_token(user["id"], user["role"])
-    user_data = {k: v for k, v in user.items() if k != "password"}
 
     csrf_token = generate_csrf_token()
-    resp = make_response(jsonify(user_data))
+    resp = make_response(jsonify(_user_response(user)))
     resp.set_cookie(
         "token",
         token,
@@ -76,12 +67,7 @@ def logout():
 @auth_bp.route("/me")
 @require_auth
 def me():
-    from flask import g
-    user_id = g.user_id
-
-    # Find user by ID (dev lookup)
-    for user in _DEV_USERS.values():
-        if user["id"] == user_id:
-            return jsonify({k: v for k, v in user.items() if k != "password"})
-
-    return jsonify({"error": "Bruker ikke funnet"}), 404
+    user = user_model.find_by_id(g.user_id)
+    if not user:
+        return jsonify({"error": "Bruker ikke funnet"}), 404
+    return jsonify(_user_response(user))

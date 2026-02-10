@@ -3,6 +3,11 @@ from flask_cors import CORS
 from config import Config
 from blueprints.auth import auth_bp
 from blueprints.health import health_bp
+from blueprints.documents import documents_bp
+from blueprints.customers import customers_bp
+from blueprints.upload import upload_bp
+from blueprints.admin import admin_bp
+from db import init_db, close_db
 
 
 def create_app() -> Flask:
@@ -12,8 +17,18 @@ def create_app() -> Flask:
 
     CORS(app, origins=[Config.CORS_ORIGIN], supports_credentials=True)
 
+    init_db()
+
     app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(documents_bp, url_prefix="/api/documents")
+    app.register_blueprint(customers_bp, url_prefix="/api/customers")
+    app.register_blueprint(upload_bp, url_prefix="/api/upload")
+    app.register_blueprint(admin_bp, url_prefix="/api/admin")
+
+    @app.teardown_appcontext
+    def shutdown(exception=None):
+        pass  # Connection pool handles cleanup
 
     return app
 

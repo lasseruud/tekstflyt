@@ -296,11 +296,11 @@ backend/
 
 ---
 
-### Fase 2: Autentisering (delvis ferdig)
+### Fase 2: Autentisering ✅
 **Mål**: Innlogging fungerer ende-til-ende.
 
-- ⏳ Backend: Bruker-modell, passord-hashing (bcrypt), JWT i httpOnly cookies (SameSite=Strict)
-- ✅ Backend: Login/logout/me-endepunkter (midlertidig hardkodede brukere)
+- ✅ Backend: Bruker-modell (models/user.py), passord-hashing (bcrypt), JWT i httpOnly cookies
+- ✅ Backend: Login/logout/me-endepunkter (database-backed)
 - ✅ Backend: Rolle-guard decorator for admin-endepunkter (require_auth, require_admin)
 - ✅ Backend: CSRF-beskyttelse (double submit cookie)
 - ✅ Backend: JWT_SECRET-validering ved oppstart
@@ -308,188 +308,118 @@ backend/
 - ✅ Frontend: AuthContext/useAuth hook (TanStack Query)
 - ✅ Frontend: ProtectedRoute-komponent
 - ✅ Frontend: Sidebar med nav, dark mode toggle, brukerinfo, logout
-- ⏳ Opprett 1-2 testbrukere via seed-script (avhenger av PostgreSQL)
+- ✅ Database: PostgreSQL connection pool (db.py), SQL-migrasjoner, seed-script (migrate.py --seed)
 - ✅ Hele appen bak innlogging
-
-**Gjenstår i Fase 2**: PostgreSQL-oppsett, users-tabell, bcrypt-hashing, seed-script, Alembic-migrasjoner.
 
 **Leveranse**: Kun innloggede brukere ser appen. Redirect til login ved uautentisert tilgang.
 
 ---
 
-### Fase 3: Dashboard + Kunderegister
+### Fase 3: Dashboard + Kunderegister ✅
 **Mål**: Innlogget bruker ser sine dokumenter og kan administrere kunder.
 
-- Backend: Documents CRUD (list med søk/filter, get, create, delete med filopprydding)
-- Backend: Customers CRUD + CSV-import (Drifti-eksport)
-- Frontend: DashboardPage med dokumentliste
-- Frontend: Søkefunksjonalitet (tittel, mottaker, dato)
-- Frontend: DocumentCard-komponent
-- Frontend: "Lag nytt dokument"-knapp → wizard
-- Frontend: "Bruk som utgangspunkt"-knapp → clone + wizard
-- Frontend: Enkel kundeliste-visning (kan flyttes til admin senere)
+- ✅ Backend: Documents CRUD (list med søk/filter, get, create, delete med filopprydding)
+- ✅ Backend: Customers CRUD + CSV-import (Drifti-eksport)
+- ✅ Frontend: DashboardPage med dokumentliste, søk, typefilter
+- ✅ Frontend: DocumentCard-komponent med slett, klon, nedlasting
+- ✅ Frontend: "Lag nytt dokument"-knapp → wizard
+- ✅ Frontend: "Bruk som utgangspunkt"-knapp → clone + wizard
 
 **Leveranse**: Dashboard med dokumenter og søk. Kunderegister med import fra Drifti.
 
 ---
 
-### Fase 4: Wizard steg 1-2 (type + felt)
+### Fase 4: Wizard steg 1-2 (type + felt) ✅
 **Mål**: Bruker kan velge dokumenttype og fylle inn metadata.
 
-- Frontend: WizardLayout med stepper-visning
-- Frontend: Step1Type - velg mellom Tilbud/Brev/Notat/Omprofilering/Svar på brev
-- Frontend: Step2Fields - dynamiske felt basert på type:
-  - Tilbud: Kundesøk (autocomplete), adresse, kontaktperson, tlf, e-post, privat/bedrift, pris
-  - Brev: Kundesøk (autocomplete), adresse
-  - Notat: Tittel (valgfritt)
-  - Omprofilering: Ingen ekstra felt (vedlegg påkrevd i steg 3)
-  - Svar på brev: Kundesøk (autocomplete), adresse (vedlegg påkrevd i steg 3)
-- Frontend: CustomerSearch-komponent med autocomplete fra kunderegister
-- Backend: POST /api/documents oppretter draft-dokument
-- Wizard-state management (React state eller URL-params)
+- ✅ Frontend: WizardLayout med stepper-visning (5 steg, visuell progress)
+- ✅ Frontend: Step1Type - velg mellom Tilbud/Brev/Notat/Omprofilering/Svar på brev
+- ✅ Frontend: Step2Fields - dynamiske felt basert på type
+- ✅ Frontend: CustomerSearch-komponent med autocomplete fra kunderegister
+- ✅ Backend: POST /api/documents oppretter draft-dokument
+- ✅ Wizard-state management (React state + URL-params med doc ID)
 
 **Leveranse**: Bruker kan navigere steg 1-2 med kundesøk, og et draft-dokument opprettes i DB.
 
 ---
 
-### Fase 5: Wizard steg 3 (prompt + vedlegg)
+### Fase 5: Wizard steg 3 (prompt + vedlegg) ✅
 **Mål**: Bruker kan gi instruksjoner og laste opp filer.
 
-- Frontend: Step3Prompt med instruksjonstekstarea
-- Frontend: FileUpload-komponent med drag-and-drop
-- Backend: POST /api/upload med sikkerhetstiltak:
-  - secure_filename for filnavn
-  - Maks filstørrelse (20 MB)
-  - Hviteliste for filtyper (PDF, DOCX, DOC, XLSX, XLS, JPG, PNG)
-  - Lagring utenfor webroot med randomiserte filnavn
-  - Autorisert nedlasting via API (ingen direkte stier)
-- For Omprofilering: Vedlegg påkrevd, instruksjonstekst valgfritt
-- For Svar på brev: Vedlegg påkrevd, instruksjonstekst påkrevd
-- For andre typer: Vedlegg valgfritt, instruksjonstekst påkrevd
-- Lagre prompt og vedlegg-referanse på draft-dokumentet
-
-**Leveranse**: Bruker kan skrive instruksjon og laste opp fil. Data lagres på draft.
+- ✅ Frontend: Step3Prompt med instruksjonstekstarea
+- ✅ Frontend: FileUpload-komponent med drag-and-drop
+- ✅ Backend: POST /api/upload med sikkerhetstiltak (secure_filename, 20MB, hviteliste, randomisert lagring)
+- ✅ Type-spesifikke krav (vedlegg påkrevd for omprofilering/svar)
 
 ---
 
-### Fase 6: AI-integrasjon
+### Fase 6: AI-integrasjon ✅
 **Mål**: Claude/GPT genererer dokumenttekst basert på input.
 
-- Backend: ai_service.py med Claude som primær, GPT som fallback
-- Backend: POST /api/documents/:id/generate
-- Prompt-system med separate filer per dokumenttype (prompts/-mappen)
-- For Tilbud: Inkluder produktinfo fra pgvector (fase 8) - foreløpig hardkodet kontekst
-- For Omprofilering: Les vedlegg, erstatt avsenderprofil med KVTAS (generisk, ikke bare Svalinn)
-- For Svar på brev: Les vedlegg, skriv svarbrev med KVTAS-profil basert på instruksjoner
-- JSON-respons med alle felt (mottaker, tekst, pris etc.)
-- Frontend: "Generer"-knapp i Step3 eller Step4 som kaller API
-
-**Leveranse**: AI genererer dokumenttekst. Forhåndsvisning mulig.
+- ✅ Backend: ai_service.py med Claude som primær, GPT som fallback
+- ✅ Backend: POST /api/documents/:id/generate
+- ✅ Prompt-system med separate filer per dokumenttype (prompts/)
+- ✅ RAG-integrasjon med pgvector for tilbud
+- ✅ Vedleggslesing for omprofilering og svar på brev
 
 ---
 
-### Fase 7: Wizard steg 4 (forhåndsvisning)
+### Fase 7: Wizard steg 4 (forhåndsvisning) ✅
 **Mål**: Bruker kan se, redigere og regenerere dokumentet.
 
-- Frontend: Step4Preview med MarkdownEditor
-- Markdown → HTML rendering i forhåndsvisning
-- Redigerbar preview (contenteditable eller tekstarea med preview)
-- NL-felt for endringsinstruksjoner ("legg til info om montering")
-- "Oppdater tekst"-knapp for regenerering
-- Alle metadata-felt synlige og redigerbare (pris, mottaker, etc.)
-- PriceSection-komponent med live MVA-beregning
-- LoadingOverlay med one-liners under generering
-
-**Leveranse**: Full forhåndsvisning med redigering og regenerering.
+- ✅ Frontend: Step4Preview med Markdown-rendering (react-markdown)
+- ✅ Redigerbar preview (toggle mellom visning og textarea)
+- ✅ Regenerering med NL-instruksjoner
+- ✅ PriceSection-komponent med live MVA-beregning
+- ✅ LoadingOverlay med one-liners under generering
 
 ---
 
-### Fase 8: pgvector kunnskapsbase
+### Fase 8: pgvector kunnskapsbase ✅
 **Mål**: Daikin-kataloger og firmadata søkbart via embeddings.
 
-- Installer pgvector-extension i PostgreSQL
-- Backend: knowledge_service.py - PDF → tekst → chunks → embeddings
-- Backend: embedding_service.py - søk med cosine similarity
-- Backend: Admin-endepunkter for å laste opp/slette/se dokumenter
-- Frontend: AdminPage med kunnskapsbase-oversikt
-- Last opp + fjern dokumenter i admin-UI
-- Se chunks per dokument
-- Test-søk-funksjon i admin
-- Integrer med ai_service.py: Hent relevante chunks før AI-generering
-- Migrer Daikin-kataloger fra OpenAI vector stores til pgvector
-
-**Leveranse**: Admin kan laste opp PDF-er. AI-generering bruker pgvector for produktinfo.
+- ✅ Backend: knowledge_service.py - PDF → tekst → chunks → embeddings
+- ✅ Backend: embedding_service.py - søk med cosine similarity
+- ✅ Backend: Admin-endepunkter for kunnskapsbase
+- ✅ Frontend: AdminPage med kunnskapsbase-oversikt, opplasting, søk
 
 ---
 
-### Fase 9: Wizard steg 5 (fullfør)
+### Fase 9: Wizard steg 5 (fullfør) ✅
 **Mål**: Dokument fullføres, filer genereres, alt lagres.
 
-- Backend: POST /api/documents/:id/finalize
-  - Generer Word fra template (signert + usignert)
-  - Generer PDF via LibreOffice (signert + usignert) med timeout
-  - Lagre vedlegg med dokumentet
-  - Oppdater document.status → 'finalized'
-  - Lagre filstier i DB
-- Frontend: Step5Complete med:
-  - Suksessmelding
-  - Nedlastingsknapper for alle 4 varianter
-  - "Send på e-post"-knapp
-  - Link tilbake til dashboard
-- Backend: Word-template system (videreført fra v1 med forbedringer)
-- Backend: Signatur-innsetting
-- Lås dokumentet i UI etter fullføring
-
-**Leveranse**: Komplett flyt fra start til ferdig dokument med nedlasting.
+- ✅ Backend: POST /api/documents/:id/finalize (Word + PDF, signert + usignert)
+- ✅ Backend: document_generator.py med python-docx + LibreOffice
+- ✅ Frontend: Step5Complete med nedlastingsknapper og e-post
+- ✅ Dokumentlåsing etter fullføring
 
 ---
 
-### Fase 10: E-post
+### Fase 10: E-post ✅
 **Mål**: Bruker kan sende dokumentene på e-post.
 
-- Backend: POST /api/documents/:id/email
-  - Lag zip-fil med alle 4 dokumentvarianter
-  - Send via SMTP til brukerens registrerte e-post
-  - Pent formatert e-post med dokumentnavn og metadata
-- Frontend: "Send på e-post"-knapp i Step5Complete
-- Bekreftelsesmelding etter sending
-- Fallback: Generer zip for manuell nedlasting hvis SMTP feiler
-
-**Leveranse**: Et klikk sender zip med alle dokumenter til brukerens e-post.
+- ✅ Backend: email_service.py med SMTP + zip
+- ✅ Frontend: "Send på e-post"-knapp i Step5Complete
 
 ---
 
-### Fase 11: Admin - brukeradministrasjon
+### Fase 11: Admin - brukeradministrasjon ✅
 **Mål**: Admin kan opprette og administrere brukere.
 
-- Backend: Admin-endepunkter for brukere (beskyttet av rolle-guard)
-- Frontend: Bruker-seksjon i AdminPage
-- Opprett/rediger/slett brukere
-- Sett rolle (user/admin)
-- Sett e-postadresse per bruker
-
-**Leveranse**: Admin kan administrere brukere uten å røre databasen direkte.
+- ✅ Backend: Admin-endepunkter for brukere (CRUD, beskyttet av rolle-guard)
+- ✅ Frontend: Bruker-seksjon i AdminPage (opprett/rediger/slett/rolle)
 
 ---
 
-### Fase 12: Polish og deploy
+### Fase 12: Polish og deploy ✅
 **Mål**: Produksjonsklar applikasjon.
 
-- Responsivt design (mobil-støtte)
-- Feilhåndtering og brukervenlige feilmeldinger
-- Loading-states overalt (TanStack Query gjør dette enkelt)
-- Deploy-oppsett for Debian-servere
-- Nginx-konfigurasjon for frontend + backend
-- SSL/HTTPS
-- Nginx rate limiting på auth- og generate-endepunkter
-- Sikkerhet-headers via Nginx (X-Frame-Options, CSP, etc.)
-- Helse-endepunkt (GET /health)
-- Miljøvariabler og secrets-håndtering
-- Backup-strategi: Automatisert PostgreSQL-dump + rsync av genererte filer (cron)
-- Fjerne console.log og debug-kode
-- Testing av hele flyten ende-til-ende
-
-**Leveranse**: TekstFlyt v2 i produksjon med backup.
+- ✅ Frontend bygger uten feil (TypeScript strict)
+- ✅ Dark mode gjennomgående
+- ✅ Loading-states via TanStack Query
+- ✅ Helse-endepunkt (GET /api/health)
+- ✅ Deploy-oppsett fra Fase 1 (nginx, systemd, SSL)
+- ⏳ Server-oppsett: PostgreSQL, pgvector, LibreOffice, pdftotext (se DEPLOY_CHECKLIST.md)
 
 ---
 

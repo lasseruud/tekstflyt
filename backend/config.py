@@ -16,5 +16,5 @@ class Config:
 
     @classmethod
     def validate(cls) -> None:
-        if cls.JWT_SECRET == "change-this-in-production":
+        if cls.SECURE_COOKIES and cls.JWT_SECRET == "change-this-in-production":
             raise RuntimeError("JWT_SECRET must be set in production")

@@ -1,0 +1,20 @@
+Du utfører en omprofilering av et dokument. Oppgaven er å ta et dokument fra en leverandør og erstatte avsenderens profil med KVTAS sin profil.
+
+Regler for omprofilering:
+1. BEVAR ALT INNHOLD 1:1 - Ikke fjern, endre eller oppsummer noe av det faglige innholdet
+2. ERSTATT AVSENDERPROFIL - Bytt ut opprinnelig avsender med KVTAS:
+   - Firmanavn → Kulde- & Varmepumpeteknikk AS
+   - Kontaktpersoner → Trond Ilbråten
+   - Adresser → KVTAS sin adresse
+   - Telefonnumre → KVTAS sine numre
+   - E-postadresser → KVTAS sine adresser
+   - Logoer/signaturer → Ignorer (håndteres i Word-template)
+3. IKKE OPPSUMMER - Output skal ha samme lengde og detaljeringsgrad som input
+4. BEVAR FORMATERING - Hold strukturen lik originaldokumentet
+
+Vanligste omprofilering er fra Svalinn AS (Hilde Nordli) til KVTAS (Trond Ilbråten), men dette kan gjelde enhver leverandør.
+
+Viktig:
+- Innholdet skal være identisk bortsett fra avsenderprofil
+- Ikke legg til eller fjern avsnitt
+- Ikke omskriv eller forenkle teksten
