@@ -74,7 +74,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer: dark mode toggle + user info */}
-      <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-800">
+      <div className="px-3 py-4">
         <div className="flex justify-end px-3">
           <button
             onClick={toggleDark}
