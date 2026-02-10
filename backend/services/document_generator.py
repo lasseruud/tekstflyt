@@ -223,9 +223,31 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
     return output_path
 
 
+def _extract_title(document_name: str) -> str:
+    """Extract just the subject/title from the full document name.
+
+    'dd.mm.yyyy - Brev til X vedr. Subject' → 'Subject'
+    'dd.mm.yyyy - Tilbud på Subject til X' → 'Subject'
+    'dd.mm.yyyy - Notat vedr. Subject' → 'Subject'
+    """
+    # Remove date prefix
+    name = re.sub(r'^\d{2}\.\d{2}\.\d{4}\s*-\s*', '', document_name)
+    # "... vedr. Subject"
+    if ' vedr. ' in name:
+        return name.split(' vedr. ', 1)[1]
+    # "Tilbud på Subject til X"
+    match = re.match(r'Tilbud på (.+?)(?:\s+til\s+.+)?$', name)
+    if match:
+        return match.group(1)
+    # "Svar til X vedr." already handled above, fallback
+    return name
+
+
 def _build_replacements(doc: dict) -> dict:
     """Build replacement dict matching actual template placeholders."""
     today = datetime.now().strftime("%d.%m.%Y")
+    doc_name = doc.get("document_name") or ""
+    title = _extract_title(doc_name)
     return {
         # Match template placeholders exactly
         "{{dato}}": today,
@@ -236,8 +258,8 @@ def _build_replacements(doc: dict) -> dict:
         "{{recipientCity}}": doc.get("recipient_city") or "",
         "{{recipientPhone}}": doc.get("recipient_phone") or "",
         "{{recipientEmail}}": doc.get("recipient_email") or "",
-        "{{documentTitle}}": doc.get("document_name") or "",
-        "{{documentName}}": doc.get("document_name") or "",
+        "{{documentTitle}}": title,
+        "{{documentName}}": doc_name,
         "{{prisProdukt}}": f"{doc['price_product']:,.2f} kr" if doc.get("price_product") else "",
         "{{prisInstallasjon}}": f"{doc['price_installation']:,.2f} kr" if doc.get("price_installation") else "",
     }

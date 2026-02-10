@@ -14,4 +14,5 @@ Formater output som Markdown. Ikke inkluder overskrift på øverste nivå (H1) -
 VIKTIG:
 - Ikke inkluder bedriftsinformasjon (adresse, org.nr, telefon, e-post) som header eller footer i teksten. Dette håndteres automatisk av dokumentmalen.
 - Ikke inkluder avslutning med "Med vennlig hilsen", navn eller signatur. Dette legges til automatisk.
+- Ikke start med hilsen som "Kjære X" eller "Hei X". Gå rett på sak med innholdet.
 - Skriv kun selve innholdet/brødteksten i dokumentet.
