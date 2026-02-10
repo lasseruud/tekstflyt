@@ -42,11 +42,11 @@ def _build_user_prompt(doc: dict, user_prompt: str) -> str:
     if attachment_text:
         parts.append(f"\n--- Vedlagt dokument ---\n{attachment_text}\n--- Slutt vedlegg ---")
 
-    # Include RAG context for tilbud
-    if doc["document_type"] == "tilbud":
-        rag_context = _get_rag_context(user_prompt)
-        if rag_context:
-            parts.append(f"\n--- Relevant produktinformasjon ---\n{rag_context}\n--- Slutt produktinfo ---")
+    # Include RAG context from knowledge base for all document types
+    rag_query = f"KVTAS bedriftsinformasjon {user_prompt}"
+    rag_context = _get_rag_context(rag_query)
+    if rag_context:
+        parts.append(f"\n--- Relevant informasjon fra kunnskapsbasen ---\n{rag_context}\n--- Slutt kunnskapsbase ---")
 
     if user_prompt:
         parts.append(f"\nBrukerens instruksjon:\n{user_prompt}")
