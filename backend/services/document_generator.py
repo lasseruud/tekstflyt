@@ -199,6 +199,7 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
     # Add closing signature block
     document.add_paragraph()
     document.add_paragraph("Med vennlig hilsen")
+    document.add_paragraph()
 
     # Add signature image for signed versions
     if signed:
@@ -209,7 +210,6 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
                 document.add_picture(sig_path, width=Cm(5))
             except Exception:
                 logger.warning("Could not insert signature image")
-        document.add_paragraph()
 
     p_name = document.add_paragraph()
     run = p_name.add_run("Trond Ilbråten")
