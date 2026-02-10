@@ -1,8 +1,10 @@
 import os
+import re
 import logging
 import subprocess
 from datetime import datetime
 from docx import Document
+from docx.shared import Pt
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -54,34 +56,134 @@ def generate_files(doc: dict) -> dict:
     }
 
 
+def _replace_paragraph_placeholder(paragraph, key, value):
+    """Replace placeholder in paragraph, handling split runs."""
+    full_text = paragraph.text
+    if key not in full_text:
+        return False
+
+    new_text = full_text.replace(key, value)
+    # Clear all runs and set the replacement text on the first run
+    for i, run in enumerate(paragraph.runs):
+        if i == 0:
+            run.text = new_text
+        else:
+            run.text = ""
+    return True
+
+
+def _add_markdown_paragraph(document, line, insert_before=None):
+    """Add a paragraph with inline markdown formatting (bold/italic)."""
+    p = document.add_paragraph()
+
+    # Parse inline markdown: **bold**, *italic*
+    # Pattern matches **bold**, *italic*, or plain text
+    parts = re.split(r'(\*\*.*?\*\*|\*.*?\*)', line)
+
+    for part in parts:
+        if not part:
+            continue
+        if part.startswith("**") and part.endswith("**"):
+            run = p.add_run(part[2:-2])
+            run.bold = True
+        elif part.startswith("*") and part.endswith("*"):
+            run = p.add_run(part[1:-1])
+            run.italic = True
+        else:
+            p.add_run(part)
+
+    return p
+
+
+def _insert_document_text(document, text, insert_index):
+    """Insert formatted markdown text at a specific position in the document."""
+    paragraphs_to_add = []
+
+    for line in text.split("\n"):
+        line = line.strip()
+        if not line:
+            paragraphs_to_add.append(("empty", ""))
+        elif line.startswith("### "):
+            paragraphs_to_add.append(("heading3", line[4:]))
+        elif line.startswith("## "):
+            paragraphs_to_add.append(("heading2", line[3:]))
+        elif line.startswith("# "):
+            paragraphs_to_add.append(("heading1", line[2:]))
+        elif line.startswith("- "):
+            paragraphs_to_add.append(("bullet", line[2:]))
+        elif line.startswith("---"):
+            continue  # Skip horizontal rules
+        else:
+            paragraphs_to_add.append(("normal", line))
+
+    # Add paragraphs at the end of the document body (placeholder paragraph removed)
+    for ptype, content in paragraphs_to_add:
+        if ptype == "empty":
+            document.add_paragraph()
+        elif ptype.startswith("heading"):
+            level = int(ptype[-1])
+            document.add_heading(content, level=level)
+        elif ptype == "bullet":
+            p = document.add_paragraph(style="List Bullet")
+            _add_inline_runs(p, content)
+        else:
+            p = document.add_paragraph()
+            _add_inline_runs(p, content)
+
+
+def _add_inline_runs(paragraph, text):
+    """Parse inline markdown (bold/italic) and add as runs to paragraph."""
+    parts = re.split(r'(\*\*.*?\*\*|\*.*?\*)', text)
+    for part in parts:
+        if not part:
+            continue
+        if part.startswith("**") and part.endswith("**"):
+            run = paragraph.add_run(part[2:-2])
+            run.bold = True
+        elif part.startswith("*") and part.endswith("*"):
+            run = paragraph.add_run(part[1:-1])
+            run.italic = True
+        else:
+            paragraph.add_run(part)
+
+
 def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
     template_path = _get_template_path(doc["document_type"])
     document = Document(template_path)
 
-    # Replace placeholders in template
+    # Build replacements matching template placeholders
     replacements = _build_replacements(doc)
 
+    # Replace simple placeholders (handles split runs)
     for paragraph in document.paragraphs:
         for key, value in replacements.items():
-            if key in paragraph.text:
-                for run in paragraph.runs:
-                    if key in run.text:
-                        run.text = run.text.replace(key, value)
+            _replace_paragraph_placeholder(paragraph, key, value)
 
-    # Add document body text
+    # Also replace in tables (some templates use tables for layout)
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for key, value in replacements.items():
+                        _replace_paragraph_placeholder(paragraph, key, value)
+
+    # Find and replace {{documentText}} with formatted content
     text = doc.get("document_text", "")
-    for line in text.split("\n"):
-        line = line.strip()
-        if line.startswith("# "):
-            p = document.add_heading(line[2:], level=1)
-        elif line.startswith("## "):
-            p = document.add_heading(line[3:], level=2)
-        elif line.startswith("### "):
-            p = document.add_heading(line[4:], level=3)
-        elif line.startswith("- "):
-            p = document.add_paragraph(line[2:], style="List Bullet")
-        elif line:
-            p = document.add_paragraph(line)
+    text_placeholder_found = False
+
+    for i, paragraph in enumerate(document.paragraphs):
+        if "{{documentText}}" in paragraph.text:
+            # Clear the placeholder paragraph
+            for run in paragraph.runs:
+                run.text = ""
+            text_placeholder_found = True
+            break
+
+    # Insert document text (appended to end - placeholder paragraph is now empty)
+    if text:
+        _insert_document_text(document, text, 0)
+
+    # If no placeholder was found, text was already appended at the end
 
     # Add signature if signed version
     if signed:
@@ -105,19 +207,22 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
 
 
 def _build_replacements(doc: dict) -> dict:
+    """Build replacement dict matching actual template placeholders."""
     today = datetime.now().strftime("%d.%m.%Y")
     return {
-        "{{DATO}}": today,
-        "{{MOTTAKER_NAVN}}": doc.get("recipient_name") or "",
-        "{{MOTTAKER_ADRESSE}}": doc.get("recipient_address") or "",
-        "{{MOTTAKER_POSTNR}}": doc.get("recipient_postal_code") or "",
-        "{{MOTTAKER_POSTSTED}}": doc.get("recipient_city") or "",
-        "{{KONTAKTPERSON}}": doc.get("recipient_person") or "",
-        "{{TELEFON}}": doc.get("recipient_phone") or "",
-        "{{EPOST}}": doc.get("recipient_email") or "",
-        "{{DOKUMENTNAVN}}": doc.get("document_name") or "",
-        "{{PRIS_PRODUKT}}": f"{doc['price_product']:,.2f} kr" if doc.get("price_product") else "",
-        "{{PRIS_INSTALLASJON}}": f"{doc['price_installation']:,.2f} kr" if doc.get("price_installation") else "",
+        # Match template placeholders exactly
+        "{{dato}}": today,
+        "{{mottaker}}": doc.get("recipient_name") or "",
+        "{{recipientPerson}}": doc.get("recipient_person") or "",
+        "{{recipientAddress}}": doc.get("recipient_address") or "",
+        "{{recipientPostalCode}}": doc.get("recipient_postal_code") or "",
+        "{{recipientCity}}": doc.get("recipient_city") or "",
+        "{{recipientPhone}}": doc.get("recipient_phone") or "",
+        "{{recipientEmail}}": doc.get("recipient_email") or "",
+        "{{documentTitle}}": doc.get("document_name") or "",
+        "{{documentName}}": doc.get("document_name") or "",
+        "{{prisProdukt}}": f"{doc['price_product']:,.2f} kr" if doc.get("price_product") else "",
+        "{{prisInstallasjon}}": f"{doc['price_installation']:,.2f} kr" if doc.get("price_installation") else "",
     }
 
 
