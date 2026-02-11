@@ -65,9 +65,16 @@ export default function Step5Complete({ doc }: Props) {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
             {DOC_TYPE_LABELS[localDoc.document_type]} fullført!
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             {localDoc.document_name}
           </p>
+
+          {/* PDF generation warning */}
+          {!localDoc.file_path_pdf && localDoc.file_path_word && (
+            <p className="text-sm text-amber-600 dark:text-amber-400 mb-4">
+              PDF-filer kunne ikke genereres. Last ned Word-filene i stedet.
+            </p>
+          )}
 
           {/* Download buttons */}
           <div className="grid grid-cols-2 gap-3 max-w-md mx-auto mb-6">

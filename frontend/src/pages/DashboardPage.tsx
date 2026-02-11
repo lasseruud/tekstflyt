@@ -5,7 +5,7 @@ import DocumentCard from '../components/DocumentCard'
 import SearchBar from '../components/SearchBar'
 import { DOC_TYPE_LABELS } from '../utils/format'
 
-const TYPES = ['', 'tilbud', 'brev', 'notat', 'omprofilering', 'svar_paa_brev'] as const
+const TYPES = ['', 'tilbud', 'brev', 'notat', 'omprofilering', 'svar_paa_brev', 'serviceavtale'] as const
 
 export default function DashboardPage() {
   const navigate = useNavigate()

@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
+from werkzeug.utils import secure_filename
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,8 @@ TekstFlyt - Kulde- & Varmepumpeteknikk AS
             part = MIMEBase("application", "zip")
             part.set_payload(f.read())
             encoders.encode_base64(part)
-            part.add_header("Content-Disposition", f"attachment; filename={doc['document_name']}.zip")
+            safe_name = secure_filename(doc['document_name']) or "dokument"
+            part.add_header("Content-Disposition", f'attachment; filename="{safe_name}.zip"')
             msg.attach(part)
 
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
@@ -79,7 +81,8 @@ TekstFlyt - Kulde- & Varmepumpeteknikk AS
 
 
 def _create_zip(files: list[str], name: str) -> str:
-    zip_path = os.path.join(tempfile.gettempdir(), f"{name}.zip")
+    safe_name = secure_filename(name) or "dokument"
+    zip_path = os.path.join(tempfile.gettempdir(), f"{safe_name}.zip")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for filepath in files:
             zf.write(filepath, os.path.basename(filepath))

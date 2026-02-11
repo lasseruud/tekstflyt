@@ -37,10 +37,11 @@ def _build_user_prompt(doc: dict, user_prompt: str) -> str:
     if doc.get("price_installation"):
         parts.append(f"Installasjonspris: {doc['price_installation']} kr")
 
-    # Include attachment content for omprofilering and svar_paa_brev
-    attachment_text = _read_attachment(doc)
-    if attachment_text:
-        parts.append(f"\n--- Vedlagt dokument ---\n{attachment_text}\n--- Slutt vedlegg ---")
+    # Include attachment content only for types that use it
+    if doc["document_type"] in ("omprofilering", "svar_paa_brev"):
+        attachment_text = _read_attachment(doc)
+        if attachment_text:
+            parts.append(f"\n--- Vedlagt dokument ---\n{attachment_text}\n--- Slutt vedlegg ---")
 
     # Include RAG context from knowledge base for all document types
     rag_query = f"KVTAS bedriftsinformasjon {user_prompt}"
@@ -115,12 +116,13 @@ def generate_document_name(doc: dict, generated_text: str) -> str:
         "notat": "Hva handler notatet om? Svar med maks 5 ord.",
         "omprofilering": "Hva er produktet/tjenesten det gis tilbud på? Svar med maks 5 ord.",
         "svar_paa_brev": "Hva handler brevet om? Svar med maks 5 ord.",
+        "serviceavtale": "Hva slags anlegg gjelder serviceavtalen? Svar med maks 5 ord.",
     }
 
     subject = ""
     try:
         import anthropic
-        client = anthropic.Anthropic()
+        client = anthropic.Anthropic(timeout=30.0)
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=50,
@@ -140,6 +142,7 @@ def generate_document_name(doc: dict, generated_text: str) -> str:
         "notat": f"{date_str} - Notat vedr. {subject}",
         "omprofilering": f"{date_str} - Tilbud på {subject} til {customer}" if customer else f"{date_str} - Tilbud på {subject}",
         "svar_paa_brev": f"{date_str} - Svar til {customer} vedr. {subject}" if customer else f"{date_str} - Svar vedr. {subject}",
+        "serviceavtale": f"{date_str} - Serviceavtale {subject} for {customer}" if customer else f"{date_str} - Serviceavtale {subject}",
     }
 
     return templates.get(doc_type, f"{date_str} - {subject}")
@@ -166,7 +169,7 @@ def generate_document_text(doc: dict, user_prompt: str) -> dict:
 
 def _generate_with_claude(system_prompt: str, user_prompt: str) -> dict:
     import anthropic
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(timeout=120.0)
 
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -183,7 +186,7 @@ def _generate_with_claude(system_prompt: str, user_prompt: str) -> dict:
 
 def _generate_with_gpt(system_prompt: str, user_prompt: str) -> dict:
     import openai
-    client = openai.OpenAI()
+    client = openai.OpenAI(timeout=120.0)
 
     response = client.chat.completions.create(
         model="gpt-4o",

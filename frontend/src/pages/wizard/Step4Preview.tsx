@@ -17,6 +17,7 @@ export default function Step4Preview({ doc, onUpdated, onNext, onPrev }: Props) 
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(doc.document_text || '')
   const [updatePrompt, setUpdatePrompt] = useState('')
+  const [manuallyEdited, setManuallyEdited] = useState(false)
   const updateMutation = useUpdateDocument()
   const generateMutation = useGenerateText()
 
@@ -31,10 +32,12 @@ export default function Step4Preview({ doc, onUpdated, onNext, onPrev }: Props) 
 
   async function handleRegenerate() {
     if (!updatePrompt.trim()) return
+    if (manuallyEdited && !window.confirm('Du har redigert teksten manuelt. Vil du overskrive endringene?')) return
     const updated = await generateMutation.mutateAsync({ id: doc.id, prompt: updatePrompt })
     onUpdated(updated)
     setText(updated.document_text || '')
     setUpdatePrompt('')
+    setManuallyEdited(false)
   }
 
   async function handleNext() {
@@ -76,7 +79,7 @@ export default function Step4Preview({ doc, onUpdated, onNext, onPrev }: Props) 
           <div>
             <textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => { setText(e.target.value); setManuallyEdited(true) }}
               rows={20}
               className="w-full bg-transparent text-gray-900 dark:text-gray-100 text-sm font-mono focus:outline-none resize-y"
             />

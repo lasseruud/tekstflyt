@@ -24,6 +24,7 @@ def _get_template_path(doc_type: str) -> str:
         "notat": "note_template.docx",
         "omprofilering": "letter_template.docx",
         "svar_paa_brev": "letter_template.docx",
+        "serviceavtale": "offer_template.docx",
     }
     return os.path.join(TEMPLATE_DIR, template_map.get(doc_type, "letter_template.docx"))
 
@@ -97,40 +98,59 @@ def _add_markdown_paragraph(document, line, insert_before=None):
     return p
 
 
-def _insert_document_text(document, text, insert_index):
-    """Insert formatted markdown text at a specific position in the document."""
-    paragraphs_to_add = []
-
+def _insert_document_text(document, text, placeholder_para=None):
+    """Insert formatted markdown text. If placeholder_para is given, inserts at that
+    position and removes the placeholder. Otherwise appends to end."""
+    parsed = []
     for line in text.split("\n"):
         line = line.strip()
         if not line:
-            paragraphs_to_add.append(("empty", ""))
+            parsed.append(("empty", ""))
         elif line.startswith("### "):
-            paragraphs_to_add.append(("heading3", line[4:]))
+            parsed.append(("heading3", line[4:]))
         elif line.startswith("## "):
-            paragraphs_to_add.append(("heading2", line[3:]))
+            parsed.append(("heading2", line[3:]))
         elif line.startswith("# "):
-            paragraphs_to_add.append(("heading1", line[2:]))
+            parsed.append(("heading1", line[2:]))
         elif line.startswith("- "):
-            paragraphs_to_add.append(("bullet", line[2:]))
+            parsed.append(("bullet", line[2:]))
         elif line.startswith("---"):
-            continue  # Skip horizontal rules
+            continue
         else:
-            paragraphs_to_add.append(("normal", line))
+            parsed.append(("normal", line))
 
-    # Add paragraphs at the end of the document body (placeholder paragraph removed)
-    for ptype, content in paragraphs_to_add:
-        if ptype == "empty":
-            document.add_paragraph()
-        elif ptype.startswith("heading"):
-            level = int(ptype[-1])
-            document.add_heading(content, level=level)
-        elif ptype == "bullet":
-            p = document.add_paragraph()
-            _add_inline_runs(p, f"  \u2022  {content}")
-        else:
-            p = document.add_paragraph()
-            _add_inline_runs(p, content)
+    if placeholder_para:
+        # Insert at placeholder position using XML manipulation
+        body = document.element.body
+        ref_elem = placeholder_para._element
+        insert_after = ref_elem
+        for ptype, content in parsed:
+            p = _create_content_paragraph(document, ptype, content)
+            elem = p._element
+            body.remove(elem)
+            insert_after.addnext(elem)
+            insert_after = elem
+        body.remove(ref_elem)
+    else:
+        for ptype, content in parsed:
+            _create_content_paragraph(document, ptype, content)
+
+
+def _create_content_paragraph(document, ptype, content):
+    """Create a paragraph at end of document and return it."""
+    if ptype == "empty":
+        return document.add_paragraph()
+    elif ptype.startswith("heading"):
+        level = int(ptype[-1])
+        return document.add_heading(content, level=level)
+    elif ptype == "bullet":
+        p = document.add_paragraph()
+        _add_inline_runs(p, f"  \u2022  {content}")
+        return p
+    else:
+        p = document.add_paragraph()
+        _add_inline_runs(p, content)
+        return p
 
 
 def _add_inline_runs(paragraph, text):
@@ -178,23 +198,20 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
                         bold_override = False if key in not_bold else None
                         _replace_paragraph_placeholder(paragraph, key, value, bold=bold_override)
 
-    # Find and replace {{documentText}} with formatted content
+    # Find {{documentText}} placeholder paragraph
     text = doc.get("document_text", "")
-    text_placeholder_found = False
+    placeholder_para = None
 
-    for i, paragraph in enumerate(document.paragraphs):
+    for paragraph in document.paragraphs:
         if "{{documentText}}" in paragraph.text:
-            # Clear the placeholder paragraph
-            for run in paragraph.runs:
-                run.text = ""
-            text_placeholder_found = True
+            placeholder_para = paragraph
             break
 
-    # Insert document text (appended to end - placeholder paragraph is now empty)
+    # Insert document text at placeholder position (or append to end)
     if text:
-        _insert_document_text(document, text, 0)
-
-    # If no placeholder was found, text was already appended at the end
+        _insert_document_text(document, text, placeholder_para)
+    elif placeholder_para:
+        document.element.body.remove(placeholder_para._element)
 
     # Add closing signature block
     document.add_paragraph()
@@ -237,6 +254,10 @@ def _extract_title(document_name: str) -> str:
         return name.split(' vedr. ', 1)[1]
     # "Tilbud på Subject til X"
     match = re.match(r'Tilbud på (.+?)(?:\s+til\s+.+)?$', name)
+    if match:
+        return match.group(1)
+    # "Serviceavtale Subject for X"
+    match = re.match(r'Serviceavtale (.+?)(?:\s+for\s+.+)?$', name)
     if match:
         return match.group(1)
     # "Svar til X vedr." already handled above, fallback

@@ -32,6 +32,12 @@ const DOC_TYPES = [
     description: 'Skriv svar på mottatt brev med KVTAS-profil',
     icon: '↩️',
   },
+  {
+    type: 'serviceavtale' as const,
+    label: 'Serviceavtale',
+    description: 'Serviceavtale med anleggsbeskrivelse og pris',
+    icon: '🔧',
+  },
 ]
 
 interface Props {

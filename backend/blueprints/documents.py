@@ -35,7 +35,7 @@ def create_document():
         return jsonify({"error": "Mangler data"}), 400
 
     doc_type = data.get("document_type")
-    if doc_type not in ("tilbud", "brev", "notat", "omprofilering", "svar_paa_brev"):
+    if doc_type not in ("tilbud", "brev", "notat", "omprofilering", "svar_paa_brev", "serviceavtale"):
         return jsonify({"error": "Ugyldig dokumenttype"}), 400
 
     type_labels = {
@@ -44,6 +44,7 @@ def create_document():
         "notat": "Notat",
         "omprofilering": "Omprofilering",
         "svar_paa_brev": "Svar på brev",
+        "serviceavtale": "Serviceavtale",
     }
     doc_name = data.get("document_name", f"Nytt {type_labels[doc_type]}")
 
@@ -117,28 +118,37 @@ def generate_text(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
     if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
-    if doc["status"] == "finalized":
-        return jsonify({"error": "Kan ikke regenerere fullført dokument"}), 400
 
-    data = request.get_json() or {}
-    prompt = data.get("prompt", doc.get("ai_prompt", ""))
+    # Lock document for generation (prevents parallel requests)
+    if not doc_model.set_status(doc_id, "generating", ["draft"]):
+        if doc["status"] == "finalized":
+            return jsonify({"error": "Kan ikke regenerere fullført dokument"}), 400
+        return jsonify({"error": "Dokumentet er allerede under behandling"}), 409
 
-    from services.ai_service import generate_document_text, generate_document_name
-    result = generate_document_text(doc, prompt)
+    try:
+        data = request.get_json() or {}
+        prompt = data.get("prompt", doc.get("ai_prompt", ""))
 
-    # Auto-generate document name from content
-    doc_name = generate_document_name(doc, result["text"])
+        from services.ai_service import generate_document_text, generate_document_name
+        result = generate_document_text(doc, prompt)
 
-    updates = {
-        "document_text": result["text"],
-        "ai_model": result["model"],
-        "document_name": doc_name,
-    }
-    if prompt:
-        updates["ai_prompt"] = prompt
+        # Auto-generate document name from content
+        doc_name = generate_document_name(doc, result["text"])
 
-    updated = doc_model.update(doc_id, **updates)
-    return jsonify(updated)
+        updates = {
+            "document_text": result["text"],
+            "ai_model": result["model"],
+            "document_name": doc_name,
+            "status": "draft",
+        }
+        if prompt:
+            updates["ai_prompt"] = prompt
+
+        updated = doc_model.update(doc_id, **updates)
+        return jsonify(updated)
+    except Exception:
+        doc_model.set_status(doc_id, "draft")
+        raise
 
 
 @documents_bp.route("/<int:doc_id>/finalize", methods=["POST"])
@@ -148,16 +158,28 @@ def finalize_document(doc_id: int):
     doc = doc_model.find_by_id(doc_id)
     if not doc or (doc["user_id"] != g.user_id and g.user_role != "admin"):
         return jsonify({"error": "Dokument ikke funnet"}), 404
-    if doc["status"] == "finalized":
-        return jsonify({"error": "Dokument allerede fullført"}), 400
     if not doc.get("document_text"):
         return jsonify({"error": "Dokumentet har ingen tekst"}), 400
 
-    from services.document_generator import generate_files
-    file_paths = generate_files(doc)
+    # Lock for finalization (prevents parallel requests)
+    if not doc_model.set_status(doc_id, "finalizing", ["draft"]):
+        if doc["status"] == "finalized":
+            return jsonify({"error": "Dokument allerede fullført"}), 400
+        return jsonify({"error": "Dokumentet er under behandling"}), 409
 
-    updated = doc_model.finalize(doc_id, file_paths)
-    return jsonify(updated)
+    try:
+        from services.document_generator import generate_files
+        file_paths = generate_files(doc)
+
+        if not file_paths.get("word"):
+            doc_model.set_status(doc_id, "draft")
+            return jsonify({"error": "Kunne ikke generere dokumentfiler"}), 500
+
+        updated = doc_model.finalize(doc_id, file_paths)
+        return jsonify(updated)
+    except Exception:
+        doc_model.set_status(doc_id, "draft")
+        raise
 
 
 @documents_bp.route("/<int:doc_id>/download/<file_type>")

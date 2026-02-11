@@ -38,6 +38,7 @@ export const DOC_TYPE_LABELS: Record<string, string> = {
   notat: 'Notat',
   omprofilering: 'Omprofilering',
   svar_paa_brev: 'Svar på brev',
+  serviceavtale: 'Serviceavtale',
 }
 
 export const DOC_TYPE_COLORS: Record<string, string> = {
@@ -46,4 +47,5 @@ export const DOC_TYPE_COLORS: Record<string, string> = {
   notat: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   omprofilering: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   svar_paa_brev: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  serviceavtale: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
 }

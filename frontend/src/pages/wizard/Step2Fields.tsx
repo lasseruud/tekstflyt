@@ -70,8 +70,8 @@ export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
     onNext()
   }
 
-  const needsRecipient = ['tilbud', 'brev', 'svar_paa_brev'].includes(doc.document_type)
-  const needsPrice = doc.document_type === 'tilbud'
+  const needsRecipient = ['tilbud', 'brev', 'svar_paa_brev', 'serviceavtale'].includes(doc.document_type)
+  const needsPrice = ['tilbud', 'serviceavtale'].includes(doc.document_type)
   const isMinimal = ['notat', 'omprofilering'].includes(doc.document_type)
 
   return (

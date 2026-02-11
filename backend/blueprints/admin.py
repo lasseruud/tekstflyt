@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from psycopg2.errors import UniqueViolation
 from middleware.auth import require_admin, require_csrf
 from models import user as user_model
 
@@ -39,10 +40,8 @@ def create_user():
             email=data["email"],
             role=role,
         )
-    except Exception as e:
-        if "unique" in str(e).lower():
-            return jsonify({"error": "Brukernavnet er allerede i bruk"}), 409
-        raise
+    except UniqueViolation:
+        return jsonify({"error": "Brukernavnet er allerede i bruk"}), 409
 
     return jsonify(user), 201
 

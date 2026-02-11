@@ -34,10 +34,10 @@ def find_by_id(doc_id: int) -> dict | None:
 
 def list_by_user(user_id: int, search: str | None = None, doc_type: str | None = None, admin: bool = False) -> list[dict]:
     if admin:
-        query = "SELECT * FROM documents WHERE status != 'draft'"
+        query = "SELECT * FROM documents WHERE status = 'finalized'"
         params: list = []
     else:
-        query = "SELECT * FROM documents WHERE user_id = %s AND status != 'draft'"
+        query = "SELECT * FROM documents WHERE user_id = %s AND status = 'finalized'"
         params: list = [user_id]
 
     if search:
@@ -99,6 +99,23 @@ def finalize(doc_id: int, file_paths: dict) -> dict | None:
             ),
         )
         return cur.fetchone()
+
+
+def set_status(doc_id: int, new_status: str, expected: list[str] | None = None) -> bool:
+    """Atomically set status. If expected is given, only updates if current status matches."""
+    with get_cursor() as cur:
+        if expected:
+            placeholders = ", ".join(["%s"] * len(expected))
+            cur.execute(
+                f"UPDATE documents SET status = %s, updated_at = NOW() WHERE id = %s AND status IN ({placeholders}) RETURNING id",
+                [new_status, doc_id] + expected,
+            )
+        else:
+            cur.execute(
+                "UPDATE documents SET status = %s, updated_at = NOW() WHERE id = %s RETURNING id",
+                (new_status, doc_id),
+            )
+        return cur.fetchone() is not None
 
 
 def delete(doc_id: int) -> dict | None:

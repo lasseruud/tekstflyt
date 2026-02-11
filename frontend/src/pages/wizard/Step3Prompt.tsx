@@ -79,6 +79,8 @@ export default function Step3Prompt({ doc, onUpdated, onNext, onPrev }: Props) {
                 ? 'Valgfritt: Tilleggsinstruksjoner for omprofileringen'
                 : doc.document_type === 'svar_paa_brev'
                 ? 'Beskriv hva svaret skal inneholde, f.eks. "Takk for brevet, bekreft at vi kan levere i uke 12"'
+                : doc.document_type === 'serviceavtale'
+                ? 'Beskriv anlegget, f.eks. "Daikin Altherma 3 luft-vann varmepumpe, installert 2023, årlig service"'
                 : 'Beskriv hva dokumentet skal inneholde...'
             }
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-kvtas-500 focus:border-transparent resize-y"

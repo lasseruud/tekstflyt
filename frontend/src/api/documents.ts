@@ -4,7 +4,7 @@ export interface Document {
   id: number
   user_id: number
   customer_id: number | null
-  document_type: 'tilbud' | 'brev' | 'notat' | 'omprofilering' | 'svar_paa_brev'
+  document_type: 'tilbud' | 'brev' | 'notat' | 'omprofilering' | 'svar_paa_brev' | 'serviceavtale'
   document_name: string
   recipient_name: string | null
   recipient_address: string | null
