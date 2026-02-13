@@ -192,7 +192,13 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
     for paragraph in document.paragraphs:
         for key, value in replacements.items():
             bold_override = False if key in not_bold else None
-            _replace_paragraph_placeholder(paragraph, key, value, bold=bold_override)
+            if _replace_paragraph_placeholder(paragraph, key, value, bold=bold_override):
+                if key == "{{documentTitle}}":
+                    for run in paragraph.runs:
+                        if run.text.strip():
+                            run.bold = True
+                            run.font.size = Pt(13)
+                    paragraph.paragraph_format.space_after = Pt(6)
 
     # Also replace in tables (some templates use tables for layout)
     for table in document.tables:

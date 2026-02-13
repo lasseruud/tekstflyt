@@ -82,24 +82,30 @@ export default function Step5Complete({ doc }: Props) {
               <DownloadButton
                 href={getDownloadUrl(localDoc.id, 'word')}
                 label="Word"
+                docName={localDoc.document_name}
               />
             )}
             {localDoc.file_path_word_signed && (
               <DownloadButton
                 href={getDownloadUrl(localDoc.id, 'word_signed')}
                 label="Word (signert)"
+                docName={localDoc.document_name}
+                signed
               />
             )}
             {localDoc.file_path_pdf && (
               <DownloadButton
                 href={getDownloadUrl(localDoc.id, 'pdf')}
                 label="PDF"
+                docName={localDoc.document_name}
               />
             )}
             {localDoc.file_path_pdf_signed && (
               <DownloadButton
                 href={getDownloadUrl(localDoc.id, 'pdf_signed')}
                 label="PDF (signert)"
+                docName={localDoc.document_name}
+                signed
               />
             )}
           </div>
@@ -138,9 +144,10 @@ export default function Step5Complete({ doc }: Props) {
   )
 }
 
-function DownloadButton({ href, label }: { href: string; label: string }) {
+function DownloadButton({ href, label, docName, signed }: { href: string; label: string; docName: string; signed?: boolean }) {
   const ext = label.toLowerCase().includes('pdf') ? '.pdf' : '.docx'
-  const filename = `${label}${ext}`
+  const suffix = signed ? '_signert' : ''
+  const filename = `${docName}${suffix}${ext}`
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault()
