@@ -52,7 +52,7 @@ export default function RichTextEditor({ content, onChange }: Props) {
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}
-        className="prose prose-sm dark:prose-invert max-w-none min-h-[300px] focus:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[300px] [&_.tiptap_h2]:text-blue-700 [&_.tiptap_h3]:text-blue-700 dark:[&_.tiptap_h2]:text-blue-400 dark:[&_.tiptap_h3]:text-blue-400"
+        className="prose prose-sm dark:prose-invert max-w-none min-h-[300px] focus:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[300px] [&_.tiptap_h2]:text-gray-900 [&_.tiptap_h2]:text-base [&_.tiptap_h2]:mt-6 [&_.tiptap_h2]:mb-2 [&_.tiptap_h3]:text-gray-900 [&_.tiptap_h3]:text-sm [&_.tiptap_h3]:mt-4 [&_.tiptap_h3]:mb-1 dark:[&_.tiptap_h2]:text-gray-100 dark:[&_.tiptap_h3]:text-gray-100"
       />
     </div>
   )
