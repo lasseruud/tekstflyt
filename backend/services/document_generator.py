@@ -101,25 +101,35 @@ def _add_markdown_paragraph(document, line, insert_before=None):
 def _insert_document_text(document, text, placeholder_para=None):
     """Insert formatted markdown text. If placeholder_para is given, inserts at that
     position and removes the placeholder. Otherwise appends to end."""
-    parsed = []
+    raw = []
     for line in text.split("\n"):
         line = line.strip()
         # Strip trailing backslash (markdown hard break from rich text editors)
         line = line.rstrip("\\").rstrip()
         if not line:
-            parsed.append(("empty", ""))
+            raw.append(("empty", ""))
         elif line.startswith("### "):
-            parsed.append(("heading3", line[4:]))
+            raw.append(("heading3", line[4:]))
         elif line.startswith("## "):
-            parsed.append(("heading2", line[3:]))
+            raw.append(("heading2", line[3:]))
         elif line.startswith("# "):
-            parsed.append(("heading1", line[2:]))
+            raw.append(("heading1", line[2:]))
         elif line.startswith("- "):
-            parsed.append(("bullet", line[2:]))
+            raw.append(("bullet", line[2:]))
         elif line.startswith("---"):
             continue
         else:
-            parsed.append(("normal", line))
+            raw.append(("normal", line))
+
+    # Remove empty paragraphs adjacent to headings (headings use space_before/after)
+    parsed = []
+    for i, (ptype, content) in enumerate(raw):
+        if ptype == "empty":
+            prev_is_heading = i > 0 and raw[i - 1][0].startswith("heading")
+            next_is_heading = i + 1 < len(raw) and raw[i + 1][0].startswith("heading")
+            if prev_is_heading or next_is_heading:
+                continue
+        parsed.append((ptype, content))
 
     if placeholder_para:
         # Insert at placeholder position using XML manipulation
@@ -147,6 +157,8 @@ def _create_content_paragraph(document, ptype, content):
         run = p.add_run(content)
         run.bold = True
         run.font.size = Pt(13)
+        p.paragraph_format.space_before = Pt(10)
+        p.paragraph_format.space_after = Pt(2)
         return p
     elif ptype == "bullet":
         p = document.add_paragraph()
@@ -198,7 +210,7 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
                         if run.text.strip():
                             run.bold = True
                             run.font.size = Pt(13)
-                    paragraph.paragraph_format.space_after = Pt(6)
+                    paragraph.paragraph_format.space_after = Pt(14)
 
     # Also replace in tables (some templates use tables for layout)
     for table in document.tables:
