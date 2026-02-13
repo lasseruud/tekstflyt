@@ -157,6 +157,7 @@ def _create_content_paragraph(document, ptype, content):
         run = p.add_run(content)
         run.bold = True
         run.font.size = Pt(13)
+        run.font.name = "Arial"
         p.paragraph_format.space_before = Pt(10)
         p.paragraph_format.space_after = Pt(2)
         return p
@@ -190,6 +191,9 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
     template_path = _get_template_path(doc["document_type"])
     document = Document(template_path)
 
+    # Force Arial on all text
+    document.styles["Normal"].font.name = "Arial"
+
     # Build replacements matching template placeholders
     replacements = _build_replacements(doc)
 
@@ -210,6 +214,7 @@ def _generate_word(doc: dict, file_base: str, signed: bool) -> str:
                         if run.text.strip():
                             run.bold = True
                             run.font.size = Pt(13)
+                            run.font.name = "Arial"
                     paragraph.paragraph_format.space_after = Pt(14)
 
     # Also replace in tables (some templates use tables for layout)
