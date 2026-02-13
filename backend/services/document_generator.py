@@ -143,8 +143,11 @@ def _create_content_paragraph(document, ptype, content):
     if ptype == "empty":
         return document.add_paragraph()
     elif ptype.startswith("heading"):
-        level = int(ptype[-1])
-        return document.add_heading(content, level=level)
+        p = document.add_paragraph()
+        run = p.add_run(content)
+        run.bold = True
+        run.font.size = Pt(13)
+        return p
     elif ptype == "bullet":
         p = document.add_paragraph()
         _add_inline_runs(p, f"  \u2022  {content}")
