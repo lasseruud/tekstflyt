@@ -104,6 +104,8 @@ def _insert_document_text(document, text, placeholder_para=None):
     parsed = []
     for line in text.split("\n"):
         line = line.strip()
+        # Strip trailing backslash (markdown hard break from rich text editors)
+        line = line.rstrip("\\").rstrip()
         if not line:
             parsed.append(("empty", ""))
         elif line.startswith("### "):

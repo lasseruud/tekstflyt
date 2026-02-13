@@ -1,29 +1,46 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface Props {
   content: string
   onChange: (markdown: string) => void
 }
 
+function getMarkdown(editor: ReturnType<typeof useEditor>): string {
+  return (editor!.storage as Record<string, any>).markdown.getMarkdown()
+}
+
 export default function RichTextEditor({ content, onChange }: Props) {
+  const initializedRef = useRef(false)
+
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Markdown,
+      Markdown.configure({
+        html: false,
+        breaks: false,
+      }),
     ],
-    content,
+    // Don't pass content here - it gets treated as HTML, not markdown.
+    // We use setContent() after init so tiptap-markdown parses it properly.
     onUpdate: ({ editor }) => {
-      const md = (editor.storage as Record<string, any>).markdown.getMarkdown()
-      onChange(md)
+      onChange(getMarkdown(editor))
     },
   })
 
+  // Parse initial markdown content after editor initializes
+  useEffect(() => {
+    if (editor && !initializedRef.current) {
+      initializedRef.current = true
+      editor.commands.setContent(content)
+    }
+  }, [editor, content])
+
   // Sync external content changes (e.g. after regeneration)
   useEffect(() => {
-    if (editor && content !== (editor.storage as Record<string, any>).markdown.getMarkdown()) {
+    if (editor && initializedRef.current && content !== getMarkdown(editor)) {
       editor.commands.setContent(content)
     }
   }, [content, editor])
@@ -35,7 +52,7 @@ export default function RichTextEditor({ content, onChange }: Props) {
       <Toolbar editor={editor} />
       <EditorContent
         editor={editor}
-        className="prose prose-sm dark:prose-invert max-w-none min-h-[300px] focus:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[300px]"
+        className="prose prose-sm dark:prose-invert max-w-none min-h-[300px] focus:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[300px] [&_.tiptap_h2]:text-blue-700 [&_.tiptap_h3]:text-blue-700 dark:[&_.tiptap_h2]:text-blue-400 dark:[&_.tiptap_h3]:text-blue-400"
       />
     </div>
   )
