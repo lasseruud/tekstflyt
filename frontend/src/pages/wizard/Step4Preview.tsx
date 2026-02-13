@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import ReactMarkdown from 'react-markdown'
+import { useState, lazy, Suspense } from 'react'
+
+const RichTextEditor = lazy(() => import('../../components/RichTextEditor'))
 import { useUpdateDocument, useGenerateText } from '../../hooks/useDocuments'
 import PriceSection from '../../components/PriceSection'
 import LoadingOverlay from '../../components/LoadingOverlay'
@@ -14,21 +15,11 @@ interface Props {
 }
 
 export default function Step4Preview({ doc, onUpdated, onNext, onPrev }: Props) {
-  const [editing, setEditing] = useState(false)
   const [text, setText] = useState(doc.document_text || '')
   const [updatePrompt, setUpdatePrompt] = useState('')
   const [manuallyEdited, setManuallyEdited] = useState(false)
   const updateMutation = useUpdateDocument()
   const generateMutation = useGenerateText()
-
-  async function handleSaveText() {
-    const updated = await updateMutation.mutateAsync({
-      id: doc.id,
-      data: { document_text: text },
-    })
-    onUpdated(updated)
-    setEditing(false)
-  }
 
   async function handleRegenerate() {
     if (!updatePrompt.trim()) return
@@ -56,47 +47,26 @@ export default function Step4Preview({ doc, onUpdated, onNext, onPrev }: Props) 
     <div>
       {generateMutation.isPending && <LoadingOverlay />}
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            {DOC_TYPE_LABELS[doc.document_type]} - Forhåndsvisning
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Se over og rediger teksten. Generer på nytt ved behov.
-          </p>
-        </div>
-        <button
-          onClick={() => setEditing(!editing)}
-          className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-        >
-          {editing ? 'Forhåndsvis' : 'Rediger'}
-        </button>
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          {DOC_TYPE_LABELS[doc.document_type]} - Forhåndsvisning
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Se over og rediger teksten direkte. Generer på nytt ved behov.
+        </p>
       </div>
 
-      {/* Preview / Editor */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-4 min-h-[300px]">
-        {editing ? (
-          <div>
-            <textarea
-              value={text}
-              onChange={(e) => { setText(e.target.value); setManuallyEdited(true) }}
-              rows={20}
-              className="w-full bg-transparent text-gray-900 dark:text-gray-100 text-sm font-mono focus:outline-none resize-y"
+      {/* Rich text editor */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-4">
+        {text ? (
+          <Suspense fallback={<p className="text-sm text-gray-400">Laster editor...</p>}>
+            <RichTextEditor
+              content={text}
+              onChange={(md) => { setText(md); setManuallyEdited(true) }}
             />
-            <div className="flex justify-end mt-2">
-              <button
-                onClick={handleSaveText}
-                disabled={updateMutation.isPending}
-                className="px-4 py-1.5 bg-kvtas-500 hover:bg-kvtas-600 text-white text-sm rounded-lg transition-colors cursor-pointer"
-              >
-                Lagre endringer
-              </button>
-            </div>
-          </div>
+          </Suspense>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>{text || '*Ingen tekst generert ennå*'}</ReactMarkdown>
-          </div>
+          <p className="text-sm text-gray-400 dark:text-gray-500 italic">Ingen tekst generert ennå</p>
         )}
       </div>
 
