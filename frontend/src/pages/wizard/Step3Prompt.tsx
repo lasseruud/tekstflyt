@@ -18,7 +18,7 @@ export default function Step3Prompt({ doc, onUpdated, onNext, onPrev }: Props) {
   const updateMutation = useUpdateDocument()
   const generateMutation = useGenerateText()
 
-  const requiresAttachment = ['omprofilering', 'svar_paa_brev'].includes(doc.document_type)
+  const requiresAttachment = doc.document_type === 'omprofilering'
   const requiresPrompt = doc.document_type !== 'omprofilering'
 
   async function handleUpload(result: UploadResult) {
@@ -56,7 +56,7 @@ export default function Step3Prompt({ doc, onUpdated, onNext, onPrev }: Props) {
 
       <div className="space-y-4">
         {/* File upload for types that need it */}
-        {(requiresAttachment || ['tilbud', 'brev'].includes(doc.document_type)) && (
+        {(requiresAttachment || ['tilbud', 'brev', 'serviceavtale'].includes(doc.document_type)) && (
           <FileUpload
             onUpload={handleUpload}
             required={requiresAttachment}

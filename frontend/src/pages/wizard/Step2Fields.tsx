@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useUpdateDocument } from '../../hooks/useDocuments'
 import CustomerSearch from '../../components/CustomerSearch'
 import PriceSection from '../../components/PriceSection'
+import FileUpload from '../../components/FileUpload'
 import type { Document } from '../../api/documents'
 import type { Customer } from '../../api/customers'
+import type { UploadResult } from '../../api/upload'
 import { DOC_TYPE_LABELS } from '../../utils/format'
 
 interface Props {
@@ -70,9 +72,18 @@ export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
     onNext()
   }
 
-  const needsRecipient = ['tilbud', 'brev', 'svar_paa_brev', 'serviceavtale'].includes(doc.document_type)
+  const needsRecipient = ['tilbud', 'brev', 'serviceavtale'].includes(doc.document_type)
   const needsPrice = ['tilbud', 'serviceavtale'].includes(doc.document_type)
+  const needsUploadOnly = doc.document_type === 'svar_paa_brev'
   const isMinimal = ['notat', 'omprofilering'].includes(doc.document_type)
+
+  async function handleUpload(result: UploadResult) {
+    const updated = await updateMutation.mutateAsync({
+      id: doc.id,
+      data: { file_path_attachment: result.path },
+    })
+    onUpdated(updated)
+  }
 
   return (
     <div>
@@ -142,7 +153,21 @@ export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
           />
         )}
 
-        {isMinimal && !needsRecipient && (
+        {needsUploadOnly && (
+          <>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Last opp brevet du har mottatt. Mottakerinformasjon hentes automatisk.
+            </p>
+            <FileUpload onUpload={handleUpload} required />
+            {doc.file_path_attachment && (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                Fil lastet opp
+              </p>
+            )}
+          </>
+        )}
+
+        {isMinimal && !needsRecipient && !needsUploadOnly && (
           <p className="text-sm text-gray-400 dark:text-gray-500">
             Ingen ekstra felt for {DOC_TYPE_LABELS[doc.document_type].toLowerCase()}.
           </p>
@@ -159,7 +184,7 @@ export default function Step2Fields({ doc, onUpdated, onNext, onPrev }: Props) {
         </button>
         <button
           onClick={handleNext}
-          disabled={updateMutation.isPending}
+          disabled={updateMutation.isPending || (needsUploadOnly && !doc.file_path_attachment)}
           className="px-6 py-2 bg-kvtas-500 hover:bg-kvtas-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
         >
           {updateMutation.isPending ? 'Lagrer...' : 'Neste'}
